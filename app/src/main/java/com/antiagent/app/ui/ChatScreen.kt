@@ -338,6 +338,18 @@ fun ChatScreen(vm: AppViewModel, onMenu: () -> Unit) {
                                 onRegenerate = { vm.regenerate() }
                             )
                         }
+                        if (vm.fallbackNotice.isNotBlank()) {
+                            item(key = "fallback") {
+                                Text(
+                                    vm.fallbackNotice,
+                                    fontSize = 11.sp,
+                                    color = colors.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                         if (vm.sending) {
                             item(key = "streaming") {
                                 if (vm.streamingText.isBlank()) {

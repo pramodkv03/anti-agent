@@ -543,6 +543,10 @@ object Llm {
         if (raw.isBlank()) return "empty error response — check your internet"
         val lower = raw.lowercase()
         val friendly = when {
+            lower.contains("429") || lower.contains("rate-limit") ||
+                lower.contains("rate limit") || lower.contains("rpm_limit_exceeded") ||
+                lower.contains("too many requests") ->
+                "That free model is rate-limited right now — retry in a minute or pick another model"
             lower.contains("api_key_invalid") || lower.contains("api key not valid") ->
                 "This API key is not valid"
             lower.contains("permission_denied") || lower.contains("key was disabled") ->

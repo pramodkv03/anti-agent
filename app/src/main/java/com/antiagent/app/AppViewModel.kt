@@ -63,6 +63,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** null, "no_key_gemini", "no_key_openrouter", "empty", "failed" */
     var chatErrorKind by mutableStateOf<String?>(null)
     var chatErrorDetail by mutableStateOf<String?>(null)
+    var fallbackNotice by mutableStateOf("")
 
     var geminiKey by mutableStateOf(prefs.geminiKey)
     var openRouterKey by mutableStateOf(prefs.openRouterKey)
@@ -380,13 +381,30 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         job?.cancel()
     }
 
-    private fun startCompletion(conv: Conversation) {
-        val model = activeModel
-        val key = if (model.provider == "gemini") geminiKey.trim() else openRouterKey.trim()
+    private fun keyFor(m: LlmModel): String =
+        if (m.provider == "gemini") geminiKey.trim() else openRouterKey.trim()
 
+    private fun isRateLimit(msg: String): Boolean =
+        msg.contains("429") || msg.contains("rate-limit", true) ||
+            msg.contains("rate limit", true) || msg.contains("rpm_limit_exceeded", true) ||
+            msg.contains("too many requests", true)
+
+    /** Next usable model: same provider first, then the other one. */
+    private fun fallbackModel(current: LlmModel, failed: Set<String>): LlmModel? {
+        val candidates = models.filter { m ->
+            m.id != current.id && m.id !in failed && keyFor(m).isNotEmpty()
+        }
+        return candidates.firstOrNull { it.provider == current.provider }
+            ?: candidates.firstOrNull()
+    }
+
+    private fun startCompletion(conv: Conversation) {
         chatErrorKind = null
         chatErrorDetail = null
+        fallbackNotice = ""
 
+        var model = activeModel
+        var key = keyFor(model)
         if (key.isEmpty()) {
             chatErrorKind = if (model.provider == "gemini") "no_key_gemini" else "no_key_openrouter"
             return
@@ -395,33 +413,60 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         sending = true
         streamingText = ""
         stopRequested = false
-        noteRequest(model)
         val system = buildSystemPrompt()
         val history = conv.messages.takeLast(30)
-        val web = webSearch && model.provider == "gemini"
+        val failed = HashSet<String>()
 
         job = viewModelScope.launch {
             var finished = false
             try {
-                Llm.stream(model, key, system, history, temperature, web, { delta ->
-                    streamingText += delta
-                }, { input, output -> addTokens(model, input, output) })
-                finished = true
-            } catch (e: CancellationException) {
-                // stopped by the user
-            } catch (e: Exception) {
-                if (!stopRequested) {
-                    val msg = e.message ?: "unknown error"
-                    if (msg.contains("image input", ignoreCase = true) ||
-                        msg.contains("image", ignoreCase = true) && msg.contains("support", ignoreCase = true)
-                    ) {
-                        chatErrorKind = "image_unsupported"
-                        chatErrorDetail = model.label
-                    } else {
-                        chatErrorKind = "failed"
-                        chatErrorDetail = msg
+                var attempt = 0
+                val maxAttempts = 4
+                while (attempt < maxAttempts && !stopRequested) {
+                    streamingText = ""
+                    failed.add(model.id)
+                    noteRequest(model)
+                    val attemptModel = model
+                    val web = webSearch && attemptModel.provider == "gemini"
+                    try {
+                        Llm.stream(attemptModel, key, system, history, temperature, web, { delta ->
+                            streamingText += delta
+                        }, { input, output -> addTokens(attemptModel, input, output) })
+                        finished = true
+                        break
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        val msg = e.message ?: "unknown error"
+                        if (isRateLimit(msg) && attempt < maxAttempts - 1) {
+                            val next = fallbackModel(attemptModel, failed)
+                            if (next != null) {
+                                val nextKey = keyFor(next)
+                                if (nextKey.isNotEmpty()) {
+                                    model = next
+                                    key = nextKey
+                                    attempt++
+                                    fallbackNotice = "${attemptModel.label} was rate-limited. Trying ${next.label}…"
+                                    continue
+                                }
+                            }
+                        }
+                        if (!stopRequested) {
+                            if (msg.contains("image input", ignoreCase = true) ||
+                                msg.contains("image", ignoreCase = true) && msg.contains("support", ignoreCase = true)
+                            ) {
+                                chatErrorKind = "image_unsupported"
+                                chatErrorDetail = attemptModel.label
+                            } else {
+                                chatErrorKind = "failed"
+                                chatErrorDetail = msg
+                            }
+                        }
+                        break
                     }
                 }
+            } catch (e: CancellationException) {
+                // stopped by the user
             } finally {
                 val answer = streamingText.trim()
                 if (answer.isNotEmpty()) {
