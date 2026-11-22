@@ -266,7 +266,7 @@ private fun CodeBlock(code: String) {
     val clipboard = LocalClipboardManager.current
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.background,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
