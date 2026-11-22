@@ -22,12 +22,16 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.antiagent.app.ui.AntiAgentTheme
+import com.antiagent.app.ui.BrowserScreen
 import com.antiagent.app.ui.ChatScreen
 import com.antiagent.app.ui.DrawerContent
 import com.antiagent.app.ui.LocalStr
 import com.antiagent.app.ui.NotesScreen
 import com.antiagent.app.ui.SettingsScreen
 import com.antiagent.app.ui.Str
+import com.antiagent.app.ui.TerminalScreen
+import com.antiagent.app.ui.ToolsScreen
+import com.antiagent.app.ui.UsageScreen
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -94,6 +98,10 @@ fun AppRoot(vm: AppViewModel) {
         when (vm.screen) {
             "settings" -> SettingsScreen(vm) { vm.screen = "chat" }
             "notes" -> NotesScreen(vm) { vm.screen = "chat" }
+            "usage" -> UsageScreen(vm) { vm.screen = "chat" }
+            "browser" -> BrowserScreen(vm) { vm.screen = "chat" }
+            "terminal" -> TerminalScreen(vm) { vm.screen = "chat" }
+            "tools" -> ToolsScreen(vm) { vm.screen = "chat" }
             else -> ChatScreen(vm) { scope.launch { drawerState.open() } }
         }
     }

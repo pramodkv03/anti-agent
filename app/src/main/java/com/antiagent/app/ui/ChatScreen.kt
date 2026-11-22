@@ -260,6 +260,12 @@ fun ChatScreen(vm: AppViewModel, onMenu: () -> Unit) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { vm.screen = "browser" }) {
+                        Icon(Icons.Filled.Public, contentDescription = s.browser)
+                    }
+                    TextButton(onClick = { vm.screen = "usage" }) {
+                        Text("Usage", fontSize = 11.sp)
+                    }
                     IconButton(onClick = { vm.newChat() }) {
                         Icon(Icons.Filled.Add, contentDescription = s.newChat)
                     }
@@ -530,8 +536,10 @@ private fun ErrorBubble(
         "no_key_gemini" -> s.errorNoKeyGemini
         "no_key_openrouter" -> s.errorNoKeyOpenRouter
         "empty" -> s.errorEmpty
+        "image_unsupported" -> s.imageNotSupported
         else -> s.errorFailed
     }
+    val extra = if (kind == "image_unsupported") s.imageNotSupportedBody else null
     Surface(
         color = colors.error.copy(alpha = 0.10f),
         shape = RoundedCornerShape(14.dp),
@@ -542,6 +550,10 @@ private fun ErrorBubble(
             Text(s.errorTitle, fontWeight = FontWeight.Bold, color = colors.error, fontSize = 14.sp)
             Spacer(Modifier.height(4.dp))
             Text(headline, fontSize = 13.sp, color = colors.onSurface)
+            if (extra != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(extra, fontSize = 12.sp, color = colors.onSurfaceVariant)
+            }
             if (detail != null && kind == "failed") {
                 Spacer(Modifier.height(6.dp))
                 Text(s.detail, fontSize = 11.sp, color = colors.onSurfaceVariant)
@@ -558,7 +570,7 @@ private fun ErrorBubble(
             }
             Row(Modifier.padding(top = 6.dp)) {
                 TextButton(onClick = onRetry) { Text(s.retry) }
-                if (kind.startsWith("no_key") || kind == "failed") {
+                if (kind.startsWith("no_key") || kind == "failed" || kind == "image_unsupported") {
                     TextButton(onClick = onSettings) { Text(s.openSettings) }
                 }
             }

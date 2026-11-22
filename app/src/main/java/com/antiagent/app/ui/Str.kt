@@ -228,6 +228,110 @@ class Str(val lang: String) {
     )
     val messagesLabel get() = s("messages", "संदेश", "messages")
     val welcomeBack get() = s("Welcome back", "वापसी पर स्वागत है", "Wapas aagaye")
+
+    // ---- v2 projects / tools / usage ----
+    val workspace get() = s("Workspace", "वर्कस्पेस", "Workspace")
+    val workspaceHint get() = s(
+        "Browser, console, tools and usage — all free, on this phone.",
+        "ब्राउज़र, कंसोल, टूल्स और इस्तेमाल — सब मुफ़्त, इसी फ़ोन में।",
+        "Browser, console, tools aur usage — sab free, isi phone me."
+    )
+    val projects get() = s("Projects", "प्रोजेक्ट्स", "Projects")
+    val allProjects get() = s("All", "सभी", "All")
+    val newProject get() = s("New project", "नया प्रोजेक्ट", "Naya project")
+    val projectName get() = s("Project name", "प्रोजेक्ट का नाम", "Project ka naam")
+    val projectHint get() = s(
+        "Each project has its own chats, model and behaviour.",
+        "हर प्रोजेक्ट की अपनी चैट, मॉडल और रवैया होता है।",
+        "Har project ki apni chat, model aur behaviour hota hai."
+    )
+    val deleteProject get() = s("Delete project", "प्रोजेक्ट हटाएं", "Project delete karo")
+    val deleteProjectConfirm get() = s(
+        "Delete this project? Its chats move to Chat.",
+        "यह प्रोजेक्ट हटाएं? इसकी चैट Chat में चली जाएँगी।",
+        "Ye project delete karo? Iski chats Chat me chali jayengi."
+    )
+    val pickModel get() = s("Model for this project", "इस प्रोजेक्ट का मॉडल", "Is project ka model")
+    val pickAgent get() = s("Agent", "एजेंट", "Agent")
+    val create get() = s("Create", "बनाएं", "Banao")
+
+    val usage get() = s("Usage", "इस्तेमाल", "Usage")
+    val usageHint get() = s(
+        "Requests and tokens used on this phone. Nothing is sent anywhere.",
+        "इस फोन par हुए अनुरोध और टोकन। कहीं नहीं भेजे जाते।",
+        "Is phone par hue requests aur tokens. Kahin nahi bheje jate."
+    )
+    val requests get() = s("Requests", "अनुरोध", "Requests")
+    val tokensIn get() = s("Input tokens", "इनपुट टोकन", "Input tokens")
+    val tokensOut get() = s("Output tokens", "आउटपुट टोकन", "Output tokens")
+    val today get() = s("Today", "आज", "Aaj")
+    val allTime get() = s("All time", "कुल", "Total")
+    val balance get() = s("OpenRouter balance", "OpenRouter बैलेंस", "OpenRouter balance")
+    val balanceUsed get() = s("Used", "इस्तेमाल", "Used")
+    val balanceLimit get() = s("Limit", "सीमा", "Limit")
+    val balanceLeft get() = s("Remaining", "बचा हुआ", "Bacha hua")
+    val refreshBalance get() = s("Refresh balance", "बैलेंस रिफ्रेश", "Balance refresh")
+    val noBalance get() = s("Add an OpenRouter key to see balance.", "बैलेंस के लिए OpenRouter key डालें।", "Balance ke liye OpenRouter key daalo.")
+    val geminiQuotaNote get() = s(
+        "Google does not share the remaining Gemini free quota with apps. Local counters above show what this app used.",
+        "Google ऐप्स को Gemini की बची हुई फ्री सीमा नहीं बताता। ऊपर के अंक इस ऐप के इस्तेमाल दिखाते हैं।",
+        "Google apps ko Gemini ki bachi free limit nahi batata. Upar ke anke is app ka usage dikhate hain."
+    )
+    val resetUsage get() = s("Reset counters", "गिनती रीसेट", "Counters reset")
+
+    val browser get() = s("Browser", "ब्राउज़र", "Browser")
+    val terminal get() = s("Terminal", "टर्मिनल", "Terminal")
+    val tools get() = s("Extensions", "एक्सटेंशन", "Extensions")
+    val mcp get() = s("MCP", "MCP", "MCP")
+    val address get() = s("Type a URL or search", "URL या खोज लिखें", "URL ya search likho")
+    val go get() = s("Go", "जाएं", "Jao")
+    val readPage get() = s("Read page", "पेज पढ़ें", "Page padho")
+    val askAboutPage get() = s("Ask AI about page", "पेज के बारे में पूछें", "Page ke baare me poocho")
+    val browserHint get() = s(
+        "Use the address bar for a link or a search. Read page sends the text to chat.",
+        "लिंक या खोज के लिए ऊपर वाला बॉक्स इस्तेमाल करें। Read page पेज का टेक्स्ट चैट में भेजता है।",
+        "Link ya search ke liye upar wala box use karo. Read page page ka text chat me bhejta hai."
+    )
+    val automation get() = s("AI browser action", "AI ब्राउज़र एक्शन", "AI browser action")
+    val automationHint get() = s(
+        "Describe what to click or fill. AI writes JavaScript; you approve before it runs.",
+        "बताएं कि क्या क्लिक या भरना है। AI JavaScript लिखेगा; चलाने से पहले आपko पुष्टि करनी होगी।",
+        "Batao ki kya click ya fill karna hai. AI JS likhega; chalane se pehle confirmation hoga."
+    )
+    val runAction get() = s("Run action", "एक्शन चलाएं", "Action chalao")
+    val confirmJs get() = s("Run this JavaScript on the page?", "इस JavaScript को पेज पर चलाएं?", "Ye JS page par chalayein?")
+
+    val terminalHint get() = s(
+        "A safe local console: help, date, echo, calc, notes, ls, clear. Not a full Linux shell.",
+        "सुरक्षित लोकल कंसोल: help, date, echo, calc, notes, ls, clear। पूरा Linux shell नहीं।",
+        "Safe local console: help, date, echo, calc, notes, ls, clear. Full Linux shell nahi."
+    )
+    val commandHint get() = s("Type a command", "कमांड लिखें", "Command likho")
+    val clearOutput get() = s("Clear output", "आउटपुट साफ़ करें", "Output clear")
+
+    val localTools get() = s("Built-in tools", "बिल्ट-इन टूल्स", "Built-in tools")
+    val externalTools get() = s("MCP servers", "MCP सर्वर", "MCP servers")
+    val addServer get() = s("Add MCP server", "MCP सर्वर जोड़ें", "MCP server add karo")
+    val serverName get() = s("Server name", "सर्वर का नाम", "Server ka naam")
+    val serverUrl get() = s("Server URL", "सर्वर URL", "Server URL")
+    val testServer get() = s("Test", "जांचें", "Test")
+    val noServers get() = s("No MCP servers yet.", "अभी कोई MCP सर्वर नहीं।", "Abhi koi MCP server nahi.")
+    val toolWeb get() = s("Web search", "वेब खोज", "Web search")
+    val toolCalc get() = s("Calculator", "कैलकुलेटर", "Calculator")
+    val toolNotes get() = s("Notes", "नोट्स", "Notes")
+    val toolTime get() = s("Date & time", "तारीख और समय", "Date & time")
+    val toolBrowser get() = s("Browser control", "ब्राउज़र नियंत्रण", "Browser control")
+
+    val imageNotSupported get() = s(
+        "This model cannot read images.",
+        "यह मॉडल फ़ोटो नहीं पढ़ सकता।",
+        "Ye model photo nahi padh sakta."
+    )
+    val imageNotSupportedBody get() = s(
+        "Pick a vision model (Gemini Flash/Pro or Gemma 3) and try again, or remove the photo.",
+        "विज़न मॉडल चुनें (Gemini Flash/Pro या Gemma 3) और फिर कोशिश करें, या फ़ोटो हटाएं।",
+        "Vision model chuno (Gemini Flash/Pro ya Gemma 3) aur dobara try karo, ya photo hatao."
+    )
 }
 
 val LocalStr = staticCompositionLocalOf { Str("en") }

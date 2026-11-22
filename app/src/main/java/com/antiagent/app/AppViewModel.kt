@@ -11,14 +11,21 @@ import com.antiagent.app.data.ChatMessage
 import com.antiagent.app.data.Conversation
 import com.antiagent.app.data.JsonIo
 import com.antiagent.app.data.LlmModel
+import com.antiagent.app.data.McpServer
 import com.antiagent.app.data.Models
 import com.antiagent.app.data.NoteItem
 import com.antiagent.app.data.Personas
 import com.antiagent.app.data.Prefs
+import com.antiagent.app.data.Project
+import com.antiagent.app.data.Projects
+import com.antiagent.app.data.UsageRow
 import com.antiagent.app.net.Llm
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -27,8 +34,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     val conversations = mutableStateListOf<Conversation>()
     val notes = mutableStateListOf<NoteItem>()
+    val projects = mutableStateListOf<Project>()
+    val usage = mutableStateListOf<UsageRow>()
+    val mcpServers = mutableStateListOf<McpServer>()
 
     var models by mutableStateOf<List<LlmModel>>(emptyList())
+    var activeProject by mutableStateOf("chat")
+    var usageVersion by mutableStateOf(0)
+    var keyInfoOpenRouter by mutableStateOf("")
+    var enabledTools by mutableStateOf(
+        prefs.enabledTools.split(",").filter { it.isNotBlank() }.toSet()
+    )
 
     var currentId by mutableStateOf("")
     var screen by mutableStateOf("chat")
@@ -72,6 +88,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         conversations.addAll(JsonIo.conversationsFromJson(prefs.conversationsJson))
         notes.addAll(JsonIo.notesFromJson(prefs.notesJson))
         models = JsonIo.modelsFromJson(prefs.modelsJson).ifEmpty { Models.defaults }
+        projects.addAll(
+            JsonIo.projectsFromJson(prefs.projectsJson).ifEmpty { Projects.defaults.toMutableList() }
+        )
+        usage.addAll(JsonIo.usageFromJson(prefs.usageJson))
+        mcpServers.addAll(JsonIo.mcpFromJson(prefs.mcpServersJson))
+        activeProject = prefs.activeProject
+        if (projects.none { it.id == activeProject }) activeProject = projects.first().id
+
         if (Models.find(modelId, models) == null) {
             modelId = models.first().id
             prefs.modelId = modelId
@@ -108,7 +132,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun newChat(): Conversation {
-        val c = Conversation(UUID.randomUUID().toString(), "New chat")
+        val target = if (activeProject == Projects.ALL) "chat" else activeProject
+        val c = Conversation(UUID.randomUUID().toString(), "New chat", projectId = target)
         conversations.add(c)
         currentId = c.id
         chatErrorKind = null
@@ -143,6 +168,156 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         save()
     }
 
+    // ---------------------------------------------------------------- projects
+
+    fun activeProjectObj(): Project =
+        projects.firstOrNull { it.id == activeProject } ?: Projects.defaults.first()
+
+    fun switchProject(id: String) {
+        if (id == Projects.ALL) {
+            activeProject = Projects.ALL
+            prefs.activeProject = id
+            listVersion++
+            save()
+            return
+        }
+        val p = projects.firstOrNull { it.id == id } ?: return
+        activeProject = id
+        prefs.activeProject = id
+        if (models.any { it.id == p.modelId }) {
+            modelId = p.modelId
+            prefs.modelId = p.modelId
+        }
+        selectPersona(p.persona)
+        changeWebSearch(p.webSearch)
+        chatErrorKind = null
+        chatErrorDetail = null
+        val last = conversations.filter { it.projectId == id }.maxByOrNull { it.updatedAt }
+        if (last != null) currentId = last.id else newChat()
+        listVersion++
+        save()
+    }
+
+    fun addProject(name: String, modelId: String, persona: String) {
+        val p = Project(
+            id = UUID.randomUUID().toString(),
+            name = name.trim().ifBlank { "Project" },
+            modelId = modelId,
+            persona = persona,
+            color = projects.size % 8
+        )
+        projects.add(p)
+        switchProject(p.id)
+    }
+
+    fun deleteProject(id: String) {
+        if (id == "chat" || projects.size <= 1) return
+        projects.removeAll { it.id == id }
+        conversations.filter { it.projectId == id }.forEach { it.projectId = "chat" }
+        if (activeProject == id) switchProject("chat")
+        listVersion++
+        save()
+    }
+
+    // -------------------------------------------------------------- usage data
+
+    private fun today(): String =
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+    fun noteRequest(model: LlmModel) {
+        val day = today()
+        val idx = usage.indexOfFirst { it.key == model.id && it.day == day }
+        if (idx >= 0) {
+            val old = usage[idx]
+            usage[idx] = old.copy(requests = old.requests + 1)
+        } else {
+            usage.add(UsageRow(model.id, model.provider, 1, 0, 0, day))
+        }
+        usageVersion++
+    }
+
+    fun addTokens(model: LlmModel, input: Int, output: Int) {
+        if (input <= 0 && output <= 0) return
+        val day = today()
+        val idx = usage.indexOfFirst { it.key == model.id && it.day == day }
+        if (idx >= 0) {
+            val old = usage[idx]
+            usage[idx] = old.copy(
+                inputTokens = old.inputTokens + input,
+                outputTokens = old.outputTokens + output
+            )
+        } else {
+            usage.add(UsageRow(model.id, model.provider, 0, input, output, day))
+        }
+        usageVersion++
+    }
+
+    fun resetUsage() {
+        usage.clear()
+        prefs.usageJson = ""
+        usageVersion++
+    }
+
+    fun refreshKeyInfo() {
+        val key = openRouterKey.trim()
+        if (key.isEmpty()) {
+            keyInfoOpenRouter = ""
+            return
+        }
+        viewModelScope.launch {
+            try {
+                keyInfoOpenRouter = Llm.fetchOpenRouterKeyInfo(key)
+            } catch (e: Exception) {
+                keyInfoOpenRouter = "ERROR:" + (e.message ?: "failed")
+            }
+        }
+    }
+
+    fun toggleTool(id: String) {
+        enabledTools = if (id in enabledTools) enabledTools - id else enabledTools + id
+        prefs.enabledTools = enabledTools.joinToString(",")
+    }
+
+    fun addMcpServer(name: String, url: String) {
+        if (url.isBlank()) return
+        mcpServers.add(
+            McpServer(UUID.randomUUID().toString(), name.trim().ifBlank { "Server" }, url.trim())
+        )
+        save()
+    }
+
+    fun deleteMcpServer(id: String) {
+        mcpServers.removeAll { it.id == id }
+        save()
+    }
+
+    fun toggleMcpServer(id: String) {
+        val idx = mcpServers.indexOfFirst { it.id == id }
+        if (idx >= 0) {
+            val m = mcpServers[idx]
+            mcpServers[idx] = m.copy(enabled = !m.enabled)
+            save()
+        }
+    }
+
+    /** Ask the active model for a short one-shot answer (browser JS, terminal AI, MCP). */
+    suspend fun aiAction(system: String, prompt: String): String {
+        ensureUsableModel()
+        val m = activeModel
+        val key = if (m.provider == "gemini") geminiKey.trim() else openRouterKey.trim()
+        if (key.isEmpty()) throw RuntimeException("Add an API key in Settings first.")
+        return Llm.generate(m, key, system, prompt)
+    }
+
+    fun hasAnyKey(): Boolean = geminiKey.isNotBlank() || openRouterKey.isNotBlank()
+
+    /** Send a prepared prompt (from browser/terminal/tools) into the active chat. */
+    fun sendFromExternal(text: String) {
+        draft = text
+        screen = "chat"
+        send()
+    }
+
     fun send() {
         if (sending) return
         ensureUsableModel()
@@ -150,6 +325,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val fileText = pendingFileText
         var text = draft.trim()
         if (text.isEmpty() && image == null && fileText == null) return
+
+        if (image != null && !activeModel.vision) {
+            chatErrorKind = "image_unsupported"
+            chatErrorDetail = activeModel.label
+            return
+        }
 
         if (fileText != null) {
             val name = pendingFileName ?: "file"
@@ -214,6 +395,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         sending = true
         streamingText = ""
         stopRequested = false
+        noteRequest(model)
         val system = buildSystemPrompt()
         val history = conv.messages.takeLast(30)
         val web = webSearch && model.provider == "gemini"
@@ -221,16 +403,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         job = viewModelScope.launch {
             var finished = false
             try {
-                Llm.stream(model, key, system, history, temperature, web) { delta ->
+                Llm.stream(model, key, system, history, temperature, web, { delta ->
                     streamingText += delta
-                }
+                }, { input, output -> addTokens(model, input, output) })
                 finished = true
             } catch (e: CancellationException) {
                 // stopped by the user
             } catch (e: Exception) {
                 if (!stopRequested) {
-                    chatErrorKind = "failed"
-                    chatErrorDetail = e.message ?: "unknown error"
+                    val msg = e.message ?: "unknown error"
+                    if (msg.contains("image input", ignoreCase = true) ||
+                        msg.contains("image", ignoreCase = true) && msg.contains("support", ignoreCase = true)
+                    ) {
+                        chatErrorKind = "image_unsupported"
+                        chatErrorDetail = model.label
+                    } else {
+                        chatErrorKind = "failed"
+                        chatErrorDetail = msg
+                    }
                 }
             } finally {
                 val answer = streamingText.trim()
@@ -260,6 +450,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             else -> parts.add("Reply in the same language the user writes in.")
         }
         if (systemPrompt.isNotBlank()) parts.add(systemPrompt)
+        val tools = enabledTools.toList().sorted()
+        if (tools.isNotEmpty()) {
+            parts.add(
+                "Built-in capabilities you can use: ${tools.joinToString(", ")}. " +
+                    "The app also has a browser (with page reading and AI actions), a local " +
+                    "console, notes, projects and optional MCP servers. When the user asks you " +
+                    "to do something on the page or device, reply with the exact short step or " +
+                    "JavaScript needed and keep the explanation minimal."
+            )
+        }
         return parts.joinToString("\n\n")
     }
 
@@ -309,6 +509,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (models.none { it.id == modelId }) {
                 modelId = models.first().id
                 prefs.modelId = modelId
+            }
+
+            // Keep every project pointed at a model that really exists now.
+            for (idx in projects.indices) {
+                val p = projects[idx]
+                if (models.none { it.id == p.modelId }) {
+                    val wantsGemini = p.modelId.startsWith("gemini")
+                    val replacement = models.firstOrNull { it.provider == if (wantsGemini) "gemini" else "openrouter" }
+                        ?: models.first()
+                    projects[idx] = p.copy(modelId = replacement.id)
+                    if (activeProject == p.id) {
+                        modelId = replacement.id
+                        prefs.modelId = replacement.id
+                    }
+                }
             }
             modelsVersion++
             val msg = "CONNECTED:${fetched.size}"
@@ -380,8 +595,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun selectModel(id: String) {
         modelId = id
         prefs.modelId = id
+        val idx = projects.indexOfFirst { it.id == activeProject }
+        if (idx >= 0) projects[idx] = projects[idx].copy(modelId = id)
         chatErrorKind = null
         chatErrorDetail = null
+        save()
     }
 
     fun changeSystemPrompt(v: String) {
@@ -417,11 +635,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun selectPersona(id: String) {
         persona = id
         prefs.persona = id
+        val idx = projects.indexOfFirst { it.id == activeProject }
+        if (idx >= 0) projects[idx] = projects[idx].copy(persona = id)
     }
 
     fun changeWebSearch(v: Boolean) {
         webSearch = v
         prefs.webSearch = v
+        val idx = projects.indexOfFirst { it.id == activeProject }
+        if (idx >= 0) projects[idx] = projects[idx].copy(webSearch = v)
     }
 
     fun attachFile(name: String, content: String) {
@@ -465,5 +687,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         prefs.notesJson = JsonIo.notesToJson(notes)
         prefs.activeConversation = currentId
         prefs.modelsJson = JsonIo.modelsToJson(models)
+        prefs.projectsJson = JsonIo.projectsToJson(projects)
+        prefs.usageJson = JsonIo.usageToJson(usage)
+        prefs.mcpServersJson = JsonIo.mcpToJson(mcpServers)
     }
 }

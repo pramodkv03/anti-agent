@@ -13,7 +13,8 @@ class Conversation(
     val id: String,
     var title: String,
     val messages: SnapshotStateList<ChatMessage> = mutableStateListOf(),
-    var updatedAt: Long = System.currentTimeMillis()
+    var updatedAt: Long = System.currentTimeMillis(),
+    var projectId: String = "chat"
 )
 
 data class NoteItem(
@@ -25,21 +26,30 @@ data class NoteItem(
 data class LlmModel(
     val id: String,
     val label: String,
-    val provider: String        // "gemini" | "openrouter"
+    val provider: String,        // "gemini" | "openrouter" | ...
+    val context: Int = 0,
+    val vision: Boolean = false,
+    val tools: Boolean = false
 ) {
-    val providerLabel: String get() = if (provider == "gemini") "Gemini" else "OpenRouter"
+    val providerLabel: String get() = provider.replaceFirstChar { it.uppercase() }
+
+    val tags: String
+        get() = buildList {
+            if (vision) add("Vision")
+            if (tools) add("Tools")
+            if (context >= 1000) add("${context / 1000}k ctx")
+        }.joinToString(" · ")
 }
 
 object Models {
     val defaults = listOf(
-        LlmModel("gemini-2.5-flash", "Gemini 2.5 Flash", "gemini"),
-        LlmModel("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", "gemini"),
-        LlmModel("gemini-2.0-flash", "Gemini 2.0 Flash", "gemini"),
-        LlmModel("gemini-2.5-pro", "Gemini 2.5 Pro", "gemini"),
+        LlmModel("gemini-2.5-flash", "Gemini 2.5 Flash", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-2.0-flash", "Gemini 2.0 Flash", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-2.5-pro", "Gemini 2.5 Pro", "gemini", 1_048_576, true, true),
         LlmModel("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 (free)", "openrouter"),
         LlmModel("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B (free)", "openrouter"),
-        LlmModel("qwen/qwen3-235b-a22b:free", "Qwen3 235B (free)", "openrouter"),
-        LlmModel("google/gemma-3-27b-it:free", "Gemma 3 27B (free)", "openrouter"),
+        LlmModel("google/gemma-3-27b-it:free", "Gemma 3 27B (free)", "openrouter", vision = true),
         LlmModel("mistralai/mistral-small-3.2-24b-instruct:free", "Mistral Small 3.2 (free)", "openrouter")
     )
 
@@ -76,3 +86,43 @@ object Personas {
 
     fun find(id: String): Persona = all.firstOrNull { it.id == id } ?: all.first()
 }
+
+/** A workspace: its own chats, model and behaviour. */
+data class Project(
+    val id: String,
+    val name: String,
+    val modelId: String,
+    val persona: String = "general",
+    val webSearch: Boolean = false,
+    val color: Int = 0,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+object Projects {
+    const val ALL = "all"
+
+    val defaults = listOf(
+        Project("chat", "Chat", "gemini-2.5-flash", "general", false, 0),
+        Project("coding", "Coding", "gemini-2.5-pro", "coder", false, 1),
+        Project("writing", "Writing", "gemini-2.5-flash", "writer", false, 2),
+        Project("study", "Study", "gemini-2.5-flash", "teacher", false, 3),
+        Project("research", "Research", "gemini-2.5-flash", "general", true, 4),
+        Project("translate", "Translate", "gemini-2.5-flash", "translator", false, 5)
+    )
+}
+
+data class McpServer(
+    val id: String,
+    val name: String,
+    val url: String,
+    val enabled: Boolean = true
+)
+
+data class UsageRow(
+    val key: String,
+    val provider: String,
+    var requests: Long = 0,
+    var inputTokens: Long = 0,
+    var outputTokens: Long = 0,
+    var day: String = ""
+)

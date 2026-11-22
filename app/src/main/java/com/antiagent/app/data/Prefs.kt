@@ -65,6 +65,26 @@ class Prefs(ctx: Context) {
         get() = sp.getString("models", "") ?: ""
         set(value) = sp.edit().putString("models", value).apply()
 
+    var projectsJson: String
+        get() = sp.getString("projects", "") ?: ""
+        set(value) = sp.edit().putString("projects", value).apply()
+
+    var activeProject: String
+        get() = sp.getString("active_project", "chat") ?: "chat"
+        set(value) = sp.edit().putString("active_project", value).apply()
+
+    var usageJson: String
+        get() = sp.getString("usage", "") ?: ""
+        set(value) = sp.edit().putString("usage", value).apply()
+
+    var enabledTools: String
+        get() = sp.getString("enabled_tools", "time,calc,notes,web") ?: "time,calc,notes,web"
+        set(value) = sp.edit().putString("enabled_tools", value).apply()
+
+    var mcpServersJson: String
+        get() = sp.getString("mcp_servers", "") ?: ""
+        set(value) = sp.edit().putString("mcp_servers", value).apply()
+
     companion object {
         const val DEFAULT_SYSTEM_PROMPT =
             "You are Anti Agent, a helpful AI assistant on the user's phone. " +

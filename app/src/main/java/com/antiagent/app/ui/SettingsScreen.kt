@@ -94,6 +94,16 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 .padding(horizontal = 16.dp)
                 .padding(top = 10.dp, bottom = 48.dp)
         ) {
+            // ------------------------------------------------------ workspace
+            SectionTitle(s.workspace, s.workspaceHint)
+            NavRow(s.usage, "usage", vm)
+            NavRow(s.browser, "browser", vm)
+            NavRow(s.terminal, "terminal", vm)
+            NavRow(s.tools, "tools", vm)
+            NavRow(s.notesTitle, "notes", vm)
+
+            Spacer(Modifier.height(14.dp))
+
             // ---------------------------------------------------------- keys
             SectionTitle(s.connections, s.connectionsHint)
 
@@ -358,6 +368,24 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
             }
         )
     }
+}
+
+@Composable
+private fun NavRow(label: String, target: String, vm: AppViewModel) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(colors.surfaceVariant)
+            .clickable { vm.screen = target }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, fontSize = 13.5.sp, color = colors.onSurface, modifier = Modifier.weight(1f))
+        Text("›", fontSize = 20.sp, color = colors.onSurfaceVariant)
+    }
+    Spacer(Modifier.height(4.dp))
 }
 
 @Composable

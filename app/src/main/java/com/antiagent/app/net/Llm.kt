@@ -41,7 +41,8 @@ object Llm {
         history: List<ChatMessage>,
         temperature: Float,
         webSearch: Boolean,
-        onDelta: (String) -> Unit
+        onDelta: (String) -> Unit,
+        onUsage: (Int, Int) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         var got = false
         val cb: (String) -> Unit = { delta ->
@@ -51,15 +52,15 @@ object Llm {
             }
         }
         if (model.provider == "gemini") {
-            streamGemini(model, key, system, history, temperature, webSearch, cb)
+            streamGemini(model, key, system, history, temperature, webSearch, cb, onUsage)
             if (!got) {
-                val text = generateGemini(model, key, system, history, temperature, webSearch)
+                val text = generateGemini(model, key, system, history, temperature, webSearch, onUsage = onUsage)
                 if (text.isNotBlank()) cb(text)
             }
         } else {
-            streamOpenRouter(model, key, system, history, temperature, cb)
+            streamOpenRouter(model, key, system, history, temperature, cb, onUsage)
             if (!got) {
-                val text = generateOpenRouter(model, key, system, history, temperature)
+                val text = generateOpenRouter(model, key, system, history, temperature, onUsage = onUsage)
                 if (text.isNotBlank()) cb(text)
             }
         }
@@ -77,6 +78,21 @@ object Llm {
         }
         if (text.isBlank()) throw RuntimeException("The answer was empty")
         text
+    }
+
+    /** One-shot completion used by tools (browser automation, terminal AI, MCP). */
+    suspend fun generate(
+        model: LlmModel,
+        key: String,
+        system: String,
+        prompt: String
+    ): String = withContext(Dispatchers.IO) {
+        val history = listOf(ChatMessage("user", prompt))
+        if (model.provider == "gemini") {
+            generateGemini(model, key, system, history, 0.1f, false)
+        } else {
+            generateOpenRouter(model, key, system, history, 0.1f)
+        }
     }
 
     // -------------------------------------------------------------- Gemini core
@@ -154,7 +170,8 @@ object Llm {
         history: List<ChatMessage>,
         temperature: Float,
         webSearch: Boolean,
-        onDelta: (String) -> Unit
+        onDelta: (String) -> Unit,
+        onUsage: (Int, Int) -> Unit
     ) {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/" +
             "${model.id}:streamGenerateContent?alt=sse"
@@ -164,8 +181,10 @@ object Llm {
             body = geminiBody(system, history, temperature, webSearch, null).toString(),
             label = model.id
         ) { data ->
-            val text = geminiText(JSONObject(data))
+            val obj = JSONObject(data)
+            val text = geminiText(obj)
             if (text.isNotEmpty()) onDelta(text)
+            reportGeminiUsage(obj, onUsage)
         }
     }
 
@@ -176,7 +195,8 @@ object Llm {
         history: List<ChatMessage>,
         temperature: Float,
         webSearch: Boolean,
-        maxTokens: Int? = null
+        maxTokens: Int? = null,
+        onUsage: (Int, Int) -> Unit = { _, _ -> }
     ): String {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/" +
             "${model.id}:generateContent"
@@ -186,7 +206,16 @@ object Llm {
             body = geminiBody(system, history, temperature, webSearch, maxTokens).toString(),
             label = model.id
         )
-        return geminiText(JSONObject(raw))
+        val obj = JSONObject(raw)
+        reportGeminiUsage(obj, onUsage)
+        return geminiText(obj)
+    }
+
+    private fun reportGeminiUsage(root: JSONObject, onUsage: (Int, Int) -> Unit) {
+        val u = root.optJSONObject("usageMetadata") ?: return
+        val input = u.optInt("promptTokenCount", 0)
+        val output = u.optInt("candidatesTokenCount", 0) + u.optInt("thoughtsTokenCount", 0)
+        if (input + output > 0) onUsage(input, output)
     }
 
     // ---------------------------------------------------------- OpenRouter core
@@ -238,11 +267,13 @@ object Llm {
         system: String,
         history: List<ChatMessage>,
         temperature: Float,
-        onDelta: (String) -> Unit
+        onDelta: (String) -> Unit,
+        onUsage: (Int, Int) -> Unit
     ) {
         val body = JSONObject()
             .put("model", model.id)
             .put("stream", true)
+            .put("stream_options", JSONObject().put("include_usage", true))
             .put("messages", orMessages(system, history))
             .put("temperature", temperature.toDouble())
 
@@ -256,6 +287,7 @@ object Llm {
             val err = obj.optJSONObject("error")
             if (err != null) throw RuntimeException(err.optString("message", "OpenRouter error"))
 
+            reportOpenRouterUsage(obj, onUsage)
             val choices = obj.optJSONArray("choices") ?: return@streamSse
             if (choices.length() == 0) return@streamSse
             val delta = choices.getJSONObject(0).optJSONObject("delta") ?: return@streamSse
@@ -271,7 +303,8 @@ object Llm {
         system: String,
         history: List<ChatMessage>,
         temperature: Float,
-        maxTokens: Int? = null
+        maxTokens: Int? = null,
+        onUsage: (Int, Int) -> Unit = { _, _ -> }
     ): String {
         val body = JSONObject()
             .put("model", model.id)
@@ -286,7 +319,16 @@ object Llm {
             body = body.toString(),
             label = model.id
         )
-        return orText(JSONObject(raw))
+        val obj = JSONObject(raw)
+        reportOpenRouterUsage(obj, onUsage)
+        return orText(obj)
+    }
+
+    private fun reportOpenRouterUsage(root: JSONObject, onUsage: (Int, Int) -> Unit) {
+        val u = root.optJSONObject("usage") ?: return
+        val input = u.optInt("prompt_tokens", 0)
+        val output = u.optInt("completion_tokens", 0)
+        if (input + output > 0) onUsage(input, output)
     }
 
     // ------------------------------------------------------------- SSE plumbing
@@ -398,10 +440,14 @@ object Llm {
             val lower = name.lowercase()
             if (lower.contains("embedding") || lower.contains("aqa") || lower.contains("imagen") ||
                 lower.contains("veo") || lower.contains("tts") || lower.contains("live") ||
-                lower.contains("native-audio") || lower.contains("image")
+                lower.contains("native-audio")
             ) continue
             val label = o.optString("displayName", "").ifBlank { name }
-            out.add(LlmModel(name, label, "gemini"))
+            val context = o.optInt("inputTokenLimit", 0)
+            val vision = lower.contains("flash") || lower.contains("pro") || lower.contains("gemma") ||
+                lower.contains("vision")
+            val tools = !lower.contains("lite")
+            out.add(LlmModel(name, label, "gemini", context, vision, tools))
         }
         out
     }
@@ -433,10 +479,30 @@ object Llm {
             val isFree = prompt.toDoubleOrNull() == 0.0 && completion.toDoubleOrNull() == 0.0
             if (!isFree) continue
             val label = o.optString("name", "").ifBlank { id }
-            out.add(LlmModel(id, label, "openrouter"))
-            if (out.size >= 80) break
+            val lower = id.lowercase()
+            val context = o.optInt("context_length", 0)
+            val vision = lower.contains("gemma-3") || lower.contains("vision") ||
+                lower.contains("vl") || lower.contains("llava") || lower.contains("pixtral")
+            var tools = false
+            val params = o.optJSONArray("supported_parameters")
+            if (params != null) {
+                for (j in 0 until params.length()) {
+                    if (params.optString(j) == "tools") tools = true
+                }
+            }
+            out.add(LlmModel(id, label, "openrouter", context, vision, tools))
+            if (out.size >= 400) break
         }
         out
+    }
+
+    /** OpenRouter returns the key's own usage and limit (dollars). */
+    suspend fun fetchOpenRouterKeyInfo(key: String): String = withContext(Dispatchers.IO) {
+        httpGet(
+            "https://openrouter.ai/api/v1/key",
+            mapOf("Authorization" to "Bearer $key"),
+            "OpenRouter key info"
+        )
     }
 
     private fun httpGet(url: String, headers: Map<String, String>, label: String): String {
