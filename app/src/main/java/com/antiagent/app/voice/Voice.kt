@@ -21,7 +21,7 @@ class VoiceInput(private val ctx: Context) {
         stopInternal()
 
         if (!SpeechRecognizer.isRecognitionAvailable(ctx)) {
-            onError("Is phone par voice recognition available nahi hai")
+            onError("Voice recognition is not available on this phone")
             return
         }
 
@@ -76,12 +76,12 @@ class VoiceInput(private val ctx: Context) {
     }
 
     private fun errorText(code: Int): String = when (code) {
-        SpeechRecognizer.ERROR_AUDIO -> "Mic error"
-        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Mic permission chahiye"
-        SpeechRecognizer.ERROR_NO_MATCH -> "Kuch samajh nahi aaya, dobara bolo"
-        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Voice service/Internet nahi mila"
-        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Mic abhi busy hai"
-        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Kuch sunai nahi diya"
+        SpeechRecognizer.ERROR_AUDIO -> "Microphone error"
+        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission is needed"
+        SpeechRecognizer.ERROR_NO_MATCH -> "Did not catch that, please say it again"
+        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Voice service or internet not available"
+        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Microphone is busy"
+        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech heard"
         else -> "Voice error ($code)"
     }
 }

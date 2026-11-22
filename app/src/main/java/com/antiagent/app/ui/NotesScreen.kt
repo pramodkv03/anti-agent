@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +44,7 @@ import com.antiagent.app.AppViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotesScreen(vm: AppViewModel, onBack: () -> Unit) {
+    val s = LocalStr.current
     val colors = MaterialTheme.colorScheme
     var text by remember { mutableStateOf("") }
 
@@ -50,10 +52,10 @@ fun NotesScreen(vm: AppViewModel, onBack: () -> Unit) {
         containerColor = colors.background,
         topBar = {
             TopAppBar(
-                title = { Text("Notes & Tasks") },
+                title = { Text(s.notesTitle, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = s.close)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -76,7 +78,7 @@ fun NotesScreen(vm: AppViewModel, onBack: () -> Unit) {
                     value = text,
                     onValueChange = { text = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Naya note ya task likho…", fontSize = 14.sp) },
+                    placeholder = { Text(s.notesPlaceholder, fontSize = 14.sp) },
                     maxLines = 3,
                     shape = RoundedCornerShape(14.dp)
                 )
@@ -88,7 +90,7 @@ fun NotesScreen(vm: AppViewModel, onBack: () -> Unit) {
                     },
                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = colors.primary)
                 ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add")
+                    Icon(Icons.Filled.Add, contentDescription = s.add)
                 }
             }
 
@@ -96,7 +98,7 @@ fun NotesScreen(vm: AppViewModel, onBack: () -> Unit) {
 
             if (vm.notes.isEmpty()) {
                 Text(
-                    "Abhi koi note nahi hai.\nYahan apne tasks aur ideas likho — sab phone me hi save rehta hai.",
+                    s.notesEmpty,
                     fontSize = 13.sp,
                     color = colors.onSurfaceVariant,
                     modifier = Modifier.padding(12.dp)
@@ -127,7 +129,7 @@ fun NotesScreen(vm: AppViewModel, onBack: () -> Unit) {
                             ) {
                                 Icon(
                                     Icons.Filled.Delete,
-                                    contentDescription = "Delete note",
+                                    contentDescription = s.deleteNote,
                                     tint = colors.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )

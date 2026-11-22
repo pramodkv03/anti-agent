@@ -56,14 +56,19 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Anti Agent v1.0 (build ${{ github.run_number }})
+          tag_name: v1.1.${{ github.run_number }}
+          name: Anti Agent v1.1 (build ${{ github.run_number }})
           body: |
             Anti Agent — free AI chat + agent app.
 
             - Gemini (free key) + OpenRouter free models
-            - Streaming replies, model picker, chat history
-            - Voice input + read aloud, photo questions, notes, themes
+            - Full English UI + language switch (English / Hindi / Hinglish)
+            - Built-in test button for each API key + diagnostics
+            - Streaming replies, live model list, chat history and search
+            - Agents (General / Coder / Writer / Teacher / Translator)
+            - Voice input + read aloud, photo & file questions, notes
+            - 5 themes: Midnight, Carbon, Ocean, Daylight, Sand
+            - If the stream is blocked, the app retries without streaming
 
             Install: download `AntiAgent.apk` and open it on your phone.
           files: AntiAgent.apk

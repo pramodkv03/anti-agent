@@ -10,9 +10,17 @@ import androidx.compose.ui.graphics.Color
 object Themes {
     const val MIDNIGHT = "midnight"
     const val CARBON = "carbon"
+    const val OCEAN = "ocean"
     const val DAYLIGHT = "daylight"
+    const val SAND = "sand"
 
-    val choices = listOf(MIDNIGHT to "Midnight", CARBON to "Carbon", DAYLIGHT to "Daylight")
+    val choices = listOf(
+        MIDNIGHT to "Midnight",
+        CARBON to "Carbon",
+        OCEAN to "Ocean",
+        DAYLIGHT to "Daylight",
+        SAND to "Sand"
+    )
 }
 
 private val Midnight = darkColorScheme(
@@ -55,6 +63,26 @@ private val Carbon = darkColorScheme(
     onError = Color(0xFF2A0A0A)
 )
 
+private val Ocean = darkColorScheme(
+    primary = Color(0xFF38BDF8),
+    onPrimary = Color(0xFF04283A),
+    primaryContainer = Color(0xFF0B3B52),
+    onPrimaryContainer = Color(0xFFD6F2FF),
+    secondary = Color(0xFF818CF8),
+    onSecondary = Color(0xFF0B1240),
+    secondaryContainer = Color(0xFF1B2354),
+    onSecondaryContainer = Color(0xFFE0E3FF),
+    background = Color(0xFF071019),
+    onBackground = Color(0xFFE2EDF5),
+    surface = Color(0xFF0D1822),
+    onSurface = Color(0xFFE2EDF5),
+    surfaceVariant = Color(0xFF16242F),
+    onSurfaceVariant = Color(0xFFA5B8C6),
+    outline = Color(0xFF354A58),
+    error = Color(0xFFFF7B72),
+    onError = Color(0xFF2A0A0A)
+)
+
 private val Daylight = lightColorScheme(
     primary = Color(0xFF6D28D9),
     onPrimary = Color.White,
@@ -75,11 +103,33 @@ private val Daylight = lightColorScheme(
     onError = Color.White
 )
 
+private val Sand = lightColorScheme(
+    primary = Color(0xFFB45309),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFEDD5),
+    onPrimaryContainer = Color(0xFF3A1A00),
+    secondary = Color(0xFF0F766E),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFCCFBF1),
+    onSecondaryContainer = Color(0xFF00352F),
+    background = Color(0xFFFAF6EF),
+    onBackground = Color(0xFF201A12),
+    surface = Color(0xFFFFFDF8),
+    onSurface = Color(0xFF201A12),
+    surfaceVariant = Color(0xFFF0E7D8),
+    onSurfaceVariant = Color(0xFF5E5344),
+    outline = Color(0xFFC7B99F),
+    error = Color(0xFFB91C1C),
+    onError = Color.White
+)
+
 @Composable
 fun AntiAgentTheme(choice: String, content: @Composable () -> Unit) {
     val scheme = when (choice) {
         Themes.CARBON -> Carbon
+        Themes.OCEAN -> Ocean
         Themes.DAYLIGHT -> Daylight
+        Themes.SAND -> Sand
         else -> Midnight
     }
     MaterialTheme(colorScheme = scheme, typography = Typography(), content = content)

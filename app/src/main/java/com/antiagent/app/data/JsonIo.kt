@@ -94,4 +94,35 @@ object JsonIo {
         }
         return out
     }
+
+    fun modelsToJson(list: List<LlmModel>): String {
+        val arr = JSONArray()
+        for (m in list) {
+            arr.put(JSONObject().put("id", m.id).put("label", m.label).put("provider", m.provider))
+        }
+        return arr.toString()
+    }
+
+    fun modelsFromJson(raw: String): List<LlmModel> {
+        if (raw.isBlank()) return emptyList()
+        return try {
+            val arr = JSONArray(raw)
+            val out = ArrayList<LlmModel>()
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                val id = o.optString("id", "")
+                if (id.isBlank()) continue
+                out.add(
+                    LlmModel(
+                        id = id,
+                        label = o.optString("label", id),
+                        provider = o.optString("provider", "gemini")
+                    )
+                )
+            }
+            out
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 }

@@ -33,6 +33,22 @@ class Prefs(ctx: Context) {
         get() = sp.getString("theme", "midnight") ?: "midnight"
         set(value) = sp.edit().putString("theme", value).apply()
 
+    var language: String
+        get() = sp.getString("language", "en") ?: "en"
+        set(value) = sp.edit().putString("language", value).apply()
+
+    var replyLang: String
+        get() = sp.getString("reply_lang", "auto") ?: "auto"
+        set(value) = sp.edit().putString("reply_lang", value).apply()
+
+    var persona: String
+        get() = sp.getString("persona", "general") ?: "general"
+        set(value) = sp.edit().putString("persona", value).apply()
+
+    var webSearch: Boolean
+        get() = sp.getBoolean("web_search", false)
+        set(value) = sp.edit().putBoolean("web_search", value).apply()
+
     var conversationsJson: String
         get() = sp.getString("conversations", "") ?: ""
         set(value) = sp.edit().putString("conversations", value).apply()
@@ -45,10 +61,14 @@ class Prefs(ctx: Context) {
         get() = sp.getString("active_conversation", "") ?: ""
         set(value) = sp.edit().putString("active_conversation", value).apply()
 
+    var modelsJson: String
+        get() = sp.getString("models", "") ?: ""
+        set(value) = sp.edit().putString("models", value).apply()
+
     companion object {
         const val DEFAULT_SYSTEM_PROMPT =
             "You are Anti Agent, a helpful AI assistant on the user's phone. " +
-                "Answer clearly and practically. Reply in the same language the user writes in " +
-                "(Hindi, Hinglish or English). Use markdown for lists and code."
+                "Be accurate and practical. Reply in the same language the user writes in. " +
+                "Use markdown lists and code blocks when they help."
     }
 }
