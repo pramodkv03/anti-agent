@@ -320,8 +320,9 @@ fun ChatScreen(
         try {
             val dir = File(ctx.cacheDir, "images").apply { mkdirs() }
             val file = File(dir, "cap_${System.currentTimeMillis()}.jpg")
-            cameraUri = FileProvider.getUriForFile(ctx, ctx.packageName + ".fileprovider", file)
-            takePicture.launch(cameraUri)
+            val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".fileprovider", file)
+            cameraUri = uri
+            takePicture.launch(uri)
         } catch (_: Exception) {
             vm.error = "Camera is not available."
         }
