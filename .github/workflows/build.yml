@@ -1,0 +1,57 @@
+name: Build Anti Agent APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk AntiAgent.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntiAgent-APK
+          path: AntiAgent.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Anti Agent v1.0 (build ${{ github.run_number }})
+          body: |
+            Anti Agent — free AI chat + agent app.
+
+            - Gemini (free key) + OpenRouter free models
+            - Streaming replies, model picker, chat history
+            - Voice input + read aloud, photo questions, notes, themes
+
+            Install: download `AntiAgent.apk` and open it on your phone.
+          files: AntiAgent.apk
