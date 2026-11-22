@@ -289,7 +289,7 @@ fun ChatScreen(vm: AppViewModel, onMenu: () -> Unit) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    vm.setModel(m.id)
+                                    vm.selectModel(m.id)
                                     showModels = false
                                 }
                                 .padding(vertical = 10.dp, horizontal = 4.dp),

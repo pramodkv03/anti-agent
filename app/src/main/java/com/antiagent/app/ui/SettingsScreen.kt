@@ -96,7 +96,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
 
             OutlinedTextField(
                 value = vm.geminiKey,
-                onValueChange = { vm.setGeminiKey(it) },
+                onValueChange = { vm.changeGeminiKey(it) },
                 label = { Text("Gemini API key") },
                 placeholder = { Text("AIza...") },
                 singleLine = true,
@@ -122,7 +122,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
 
             OutlinedTextField(
                 value = vm.openRouterKey,
-                onValueChange = { vm.setOpenRouterKey(it) },
+                onValueChange = { vm.changeOpenRouterKey(it) },
                 label = { Text("OpenRouter API key") },
                 placeholder = { Text("sk-or-v1-...") },
                 singleLine = true,
@@ -157,7 +157,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .clickable { vm.setModel(m.id) }
+                        .clickable { vm.selectModel(m.id) }
                         .padding(vertical = 10.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -195,7 +195,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             OutlinedTextField(
                 value = vm.systemPrompt,
-                onValueChange = { vm.setSystemPrompt(it) },
+                onValueChange = { vm.changeSystemPrompt(it) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 4,
                 maxLines = 8
@@ -219,7 +219,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
             }
             Slider(
                 value = vm.temperature,
-                onValueChange = { vm.setTemperature(it) },
+                onValueChange = { vm.changeTemperature(it) },
                 valueRange = 0f..1.5f,
                 steps = 14
             )
@@ -239,7 +239,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                         color = colors.onSurfaceVariant
                     )
                 }
-                Switch(checked = vm.autoSpeak, onCheckedChange = { vm.setAutoSpeak(it) })
+                Switch(checked = vm.autoSpeak, onCheckedChange = { vm.changeAutoSpeak(it) })
             }
 
             Spacer(Modifier.height(20.dp))
@@ -258,7 +258,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
                             .background(if (selected) colors.primary else colors.surfaceVariant)
-                            .clickable { vm.setTheme(id) }
+                            .clickable { vm.changeTheme(id) }
                             .padding(vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -278,7 +278,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 color = colors.primary,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { vm.setSystemPrompt(Prefs.DEFAULT_SYSTEM_PROMPT) }
+                    .clickable { vm.changeSystemPrompt(Prefs.DEFAULT_SYSTEM_PROMPT) }
                     .padding(8.dp)
             )
 

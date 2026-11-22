@@ -184,13 +184,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- settings ----
 
-    fun setGeminiKey(v: String) { geminiKey = v; prefs.geminiKey = v }
-    fun setOpenRouterKey(v: String) { openRouterKey = v; prefs.openRouterKey = v }
-    fun setModel(id: String) { modelId = id; prefs.modelId = id }
-    fun setSystemPrompt(v: String) { systemPrompt = v; prefs.systemPrompt = v }
-    fun setTemperature(v: Float) { temperature = v; prefs.temperature = v }
-    fun setAutoSpeak(v: Boolean) { autoSpeak = v; prefs.autoSpeak = v }
-    fun setTheme(v: String) { theme = v; prefs.theme = v }
+    fun changeGeminiKey(v: String) { geminiKey = v; prefs.geminiKey = v }
+    fun changeOpenRouterKey(v: String) { openRouterKey = v; prefs.openRouterKey = v }
+    fun selectModel(id: String) { modelId = id; prefs.modelId = id }
+    fun changeSystemPrompt(v: String) { systemPrompt = v; prefs.systemPrompt = v }
+    fun changeTemperature(v: Float) { temperature = v; prefs.temperature = v }
+    fun changeAutoSpeak(v: Boolean) { autoSpeak = v; prefs.autoSpeak = v }
+    fun changeTheme(v: String) { theme = v; prefs.theme = v }
 
     // ---- notes ----
 
