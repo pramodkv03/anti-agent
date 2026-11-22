@@ -227,10 +227,38 @@ private fun evalExpr(expr: String): String {
     return if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 }
 
-private fun evaluate(input: String): Double {
-    val s = input.replace(" ", "")
-    var pos = 0
-    fun factor(): Double {
+private fun evaluate(input: String): Double = ExprParser(input.replace(" ", "")).parse()
+
+private class ExprParser(private val s: String) {
+    private var pos = 0
+
+    fun parse(): Double {
+        val v = expr()
+        if (pos < s.length) throw IllegalArgumentException("unexpected character")
+        return v
+    }
+
+    private fun expr(): Double {
+        var v = term()
+        while (pos < s.length && (s[pos] == '+' || s[pos] == '-')) {
+            val op = s[pos++]
+            val r = term()
+            v = if (op == '+') v + r else v - r
+        }
+        return v
+    }
+
+    private fun term(): Double {
+        var v = factor()
+        while (pos < s.length && (s[pos] == '*' || s[pos] == '/')) {
+            val op = s[pos++]
+            val r = factor()
+            v = if (op == '*') v * r else v / r
+        }
+        return v
+    }
+
+    private fun factor(): Double {
         if (pos >= s.length) throw IllegalArgumentException("incomplete")
         if (s[pos] == '(') {
             pos++
@@ -249,23 +277,4 @@ private fun evaluate(input: String): Double {
         if (start == pos) throw IllegalArgumentException("number expected")
         return sign * s.substring(start, pos).toDouble()
     }
-    fun term(): Double {
-        var v = factor()
-        while (pos < s.length && (s[pos] == '*' || s[pos] == '/')) {
-            val op = s[pos++]
-            val r = factor()
-            v = if (op == '*') v * r else v / r
-        }
-        return v
-    }
-    fun expr(): Double {
-        var v = term()
-        while (pos < s.length && (s[pos] == '+' || s[pos] == '-')) {
-            val op = s[pos++]
-            val r = term()
-            v = if (op == '+') v + r else v - r
-        }
-        return v
-    }
-    return expr()
 }

@@ -231,7 +231,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val old = usage[idx]
             usage[idx] = old.copy(requests = old.requests + 1)
         } else {
-            usage.add(UsageRow(model.id, model.provider, 1, 0, 0, day))
+            usage.add(UsageRow(model.id, model.provider, 1L, 0L, 0L, day))
         }
         usageVersion++
     }
@@ -247,7 +247,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 outputTokens = old.outputTokens + output
             )
         } else {
-            usage.add(UsageRow(model.id, model.provider, 0, input, output, day))
+            usage.add(UsageRow(model.id, model.provider, 0L, input.toLong(), output.toLong(), day))
         }
         usageVersion++
     }

@@ -24,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -195,6 +196,7 @@ private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third:
 
 @Composable
 private fun BalanceBox(used: String, limit: String, left: String, raw: String) {
+    val s = LocalStr.current
     val colors = MaterialTheme.colorScheme
     Column(
         Modifier
