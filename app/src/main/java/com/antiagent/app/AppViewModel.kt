@@ -86,6 +86,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             currentId = newChat().id
         }
+
+        // Refresh the model lists from the saved keys so old built-in model
+        // names (which providers retire) never break a chat.
+        viewModelScope.launch {
+            if (geminiKey.isNotBlank()) refreshModels("gemini")
+            if (openRouterKey.isNotBlank()) refreshModels("openrouter")
+        }
     }
 
     val activeModel: LlmModel
@@ -274,6 +281,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun connect(provider: String) {
+        viewModelScope.launch { refreshModels(provider) }
+    }
+
+    private suspend fun refreshModels(provider: String) {
         val key = if (provider == "gemini") geminiKey.trim() else openRouterKey.trim()
         if (key.isEmpty()) {
             if (provider == "gemini") statusGemini = "PASTE_KEY" else statusOpenRouter = "PASTE_KEY"
@@ -282,31 +293,31 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         testingProvider = provider
         if (provider == "gemini") statusGemini = "TESTING" else statusOpenRouter = "TESTING"
 
-        viewModelScope.launch {
-            try {
-                val fetched = if (provider == "gemini") {
-                    Llm.fetchGeminiModels(key)
-                } else {
-                    Llm.fetchOpenRouterModels(key)
-                }
-                if (fetched.isEmpty()) throw RuntimeException("No models returned for this key")
-
-                val others = models.filter { it.provider != provider }
-                models = if (provider == "gemini") fetched + others else others + fetched
-                prefs.modelsJson = JsonIo.modelsToJson(models)
-                if (Models.find(modelId, models) == null) {
-                    modelId = models.first().id
-                    prefs.modelId = modelId
-                }
-                modelsVersion++
-                val msg = "CONNECTED:${fetched.size}"
-                if (provider == "gemini") statusGemini = msg else statusOpenRouter = msg
-            } catch (e: Exception) {
-                val msg = "ERROR:" + (e.message ?: "failed")
-                if (provider == "gemini") statusGemini = msg else statusOpenRouter = msg
-            } finally {
-                testingProvider = ""
+        try {
+            val fetched = if (provider == "gemini") {
+                Llm.fetchGeminiModels(key)
+            } else {
+                Llm.fetchOpenRouterModels(key)
             }
+            if (fetched.isEmpty()) throw RuntimeException("No models returned for this key")
+
+            val others = models.filter { it.provider != provider }
+            models = if (provider == "gemini") fetched + others else others + fetched
+            prefs.modelsJson = JsonIo.modelsToJson(models)
+
+            // Current model must exist in the fresh list; otherwise pick a live one.
+            if (models.none { it.id == modelId }) {
+                modelId = models.first().id
+                prefs.modelId = modelId
+            }
+            modelsVersion++
+            val msg = "CONNECTED:${fetched.size}"
+            if (provider == "gemini") statusGemini = msg else statusOpenRouter = msg
+        } catch (e: Exception) {
+            val msg = "ERROR:" + (e.message ?: "failed")
+            if (provider == "gemini") statusGemini = msg else statusOpenRouter = msg
+        } finally {
+            testingProvider = ""
         }
     }
 
