@@ -15,10 +15,28 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val pass = System.getenv("KS_PASS")
+            if (pass != null) {
+                storeFile = file("antiagent.p12")
+                storeType = "PKCS12"
+                storePassword = pass
+                keyAlias = "antiagent"
+                keyPassword = pass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = if (System.getenv("KS_PASS") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                null
+            }
         }
     }
 
