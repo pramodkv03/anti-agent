@@ -37,6 +37,21 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Optional one-time key import: the assistant can pass keys with
+        // `am start -n com.antiagent.app/.MainActivity --es aa_gemini ...`.
+        // Keys are stored only in this app's private SharedPreferences and are
+        // never written into the APK, the repo or any log.
+        val g = intent.getStringExtra("aa_gemini")
+        val o = intent.getStringExtra("aa_openrouter")
+        if (!g.isNullOrBlank() || !o.isNullOrBlank()) {
+            val p = com.antiagent.app.data.Prefs(this)
+            if (!g.isNullOrBlank()) p.geminiKey = g.trim()
+            if (!o.isNullOrBlank()) p.openRouterKey = o.trim()
+            intent.removeExtra("aa_gemini")
+            intent.removeExtra("aa_openrouter")
+        }
+
         setContent {
             val vm: AppViewModel = viewModel()
             AntiAgentTheme(vm.theme) {
