@@ -85,10 +85,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var job: Job? = null
     private var stopRequested = false
 
+    /** Model ids that Google now rejects for newly created Gemini keys (HTTP 404). */
+    private val blockedGemini = setOf(
+        "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite",
+        "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"
+    )
+
     init {
         conversations.addAll(JsonIo.conversationsFromJson(prefs.conversationsJson))
         notes.addAll(JsonIo.notesFromJson(prefs.notesJson))
-        models = JsonIo.modelsFromJson(prefs.modelsJson).ifEmpty { Models.defaults }
+        val cachedModels = JsonIo.modelsFromJson(prefs.modelsJson)
+            .filterNot { it.provider == "gemini" && it.id in blockedGemini }
+        models = if (cachedModels.isEmpty()) {
+            Models.defaults
+        } else {
+            cachedModels + Models.defaults.filter { d -> cachedModels.none { it.id == d.id } }
+        }
         projects.addAll(
             JsonIo.projectsFromJson(prefs.projectsJson).ifEmpty { Projects.defaults.toMutableList() }
         )
@@ -523,17 +535,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // --------------------------------------------------------------- providers
 
-    /** Model ids that Google now rejects for newly created Gemini keys (HTTP 404). */
-    private val blockedGemini = setOf(
-        "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite",
-        "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"
-    )
-
     private fun migrateBlockedGeminiModel() {
         if (modelId !in blockedGemini) return
         val alt = models.firstOrNull { it.id == "gemini-3.5-flash" }
-            ?: models.firstOrNull { it.id == "gemini-flash-lite-latest" }
-            ?: models.firstOrNull { it.provider == "gemini" }
+            ?: Models.defaults.firstOrNull { it.id == "gemini-3.5-flash" }
+            ?: models.firstOrNull { it.provider == "gemini" && it.id !in blockedGemini }
             ?: return
         modelId = alt.id
         prefs.modelId = alt.id

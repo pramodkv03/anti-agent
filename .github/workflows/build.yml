@@ -67,7 +67,7 @@ jobs:
             - Streaming replies, live model list, chat history and search
             - Agents (General / Coder / Writer / Teacher / Translator)
             - Voice input + read aloud, photo & file questions, notes
-            - 5 themes: Midnight, Carbon, Ocean, Daylight, Sand
+            - 8 themes: Nebula, Midnight, Aurora, Carbon, Ocean, Sunset, Daylight, Sand
             - If the stream is blocked, the app retries without streaming
 
             Install: download `AntiAgent.apk` and open it on your phone.
