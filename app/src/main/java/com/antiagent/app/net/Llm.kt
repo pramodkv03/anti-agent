@@ -440,7 +440,8 @@ object Llm {
             val lower = name.lowercase()
             if (lower.contains("embedding") || lower.contains("aqa") || lower.contains("imagen") ||
                 lower.contains("veo") || lower.contains("tts") || lower.contains("live") ||
-                lower.contains("native-audio")
+                lower.contains("native-audio") || lower.contains("image") ||
+                lower.contains("nano-banana") || lower.contains("lyria") || lower.contains("audio")
             ) continue
             val label = o.optString("displayName", "").ifBlank { name }
             val context = o.optInt("inputTokenLimit", 0)

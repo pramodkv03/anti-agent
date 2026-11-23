@@ -14,7 +14,7 @@ class Prefs(ctx: Context) {
         set(value) = sp.edit().putString("openrouter_key", value).apply()
 
     var modelId: String
-        get() = sp.getString("model_id", "gemini-2.5-flash") ?: "gemini-2.5-flash"
+        get() = sp.getString("model_id", "gemini-3.5-flash") ?: "gemini-3.5-flash"
         set(value) = sp.edit().putString("model_id", value).apply()
 
     var systemPrompt: String
@@ -30,7 +30,7 @@ class Prefs(ctx: Context) {
         set(value) = sp.edit().putBoolean("auto_speak", value).apply()
 
     var theme: String
-        get() = sp.getString("theme", "midnight") ?: "midnight"
+        get() = sp.getString("theme", "nebula") ?: "nebula"
         set(value) = sp.edit().putString("theme", value).apply()
 
     var language: String

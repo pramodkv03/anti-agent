@@ -572,8 +572,11 @@ private fun ModelDialog(vm: AppViewModel, onClose: () -> Unit) {
 }
 
 private fun themeDot(id: String): Color = when (id) {
+    Themes.NEBULA -> Color(0xFFA78BFA)
     Themes.CARBON -> Color(0xFF34D399)
     Themes.OCEAN -> Color(0xFF38BDF8)
+    Themes.AURORA -> Color(0xFF2DD4BF)
+    Themes.SUNSET -> Color(0xFFFB7185)
     Themes.DAYLIGHT -> Color(0xFF6D28D9)
     Themes.SAND -> Color(0xFFB45309)
     else -> Color(0xFF8B5CF6)

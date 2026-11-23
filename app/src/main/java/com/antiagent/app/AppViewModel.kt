@@ -101,6 +101,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             modelId = models.first().id
             prefs.modelId = modelId
         }
+        migrateBlockedGeminiModel()
 
         val saved = prefs.activeConversation
         val found = conversations.firstOrNull { it.id == saved }
@@ -389,6 +390,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             msg.contains("rate limit", true) || msg.contains("rpm_limit_exceeded", true) ||
             msg.contains("too many requests", true)
 
+    /** Retired, renamed or overloaded model — another free model should answer instead. */
+    private fun isModelUnavailable(msg: String): Boolean =
+        msg.contains("404") || msg.contains("not found", true) ||
+            msg.contains("no longer available", true) || msg.contains("does not exist", true) ||
+            msg.contains("503") || msg.contains("unavailable", true) ||
+            msg.contains("high demand", true) || msg.contains("overloaded", true)
+
     /** Next usable model: same provider first, then the other one. */
     private fun fallbackModel(current: LlmModel, failed: Set<String>): LlmModel? {
         val candidates = models.filter { m ->
@@ -438,7 +446,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                         throw e
                     } catch (e: Exception) {
                         val msg = e.message ?: "unknown error"
-                        if (isRateLimit(msg) && attempt < maxAttempts - 1) {
+                        if ((isRateLimit(msg) || isModelUnavailable(msg)) && attempt < maxAttempts - 1) {
                             val next = fallbackModel(attemptModel, failed)
                             if (next != null) {
                                 val nextKey = keyFor(next)
@@ -446,7 +454,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                                     model = next
                                     key = nextKey
                                     attempt++
-                                    fallbackNotice = "${attemptModel.label} was rate-limited. Trying ${next.label}…"
+                                    fallbackNotice =
+                                        if (isRateLimit(msg)) {
+                                            "${attemptModel.label} was rate-limited. Trying ${next.label}…"
+                                        } else {
+                                            "${attemptModel.label} is unavailable. Trying ${next.label}…"
+                                        }
                                     continue
                                 }
                             }
@@ -510,6 +523,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // --------------------------------------------------------------- providers
 
+    /** Model ids that Google now rejects for newly created Gemini keys (HTTP 404). */
+    private val blockedGemini = setOf(
+        "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite",
+        "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"
+    )
+
+    private fun migrateBlockedGeminiModel() {
+        if (modelId !in blockedGemini) return
+        val alt = models.firstOrNull { it.id == "gemini-3.5-flash" }
+            ?: models.firstOrNull { it.id == "gemini-flash-lite-latest" }
+            ?: models.firstOrNull { it.provider == "gemini" }
+            ?: return
+        modelId = alt.id
+        prefs.modelId = alt.id
+        for (idx in projects.indices) {
+            if (projects[idx].modelId in blockedGemini) {
+                projects[idx] = projects[idx].copy(modelId = alt.id)
+            }
+        }
+    }
+
     /**
      * If the selected provider has no key but the other one does, switch to a
      * model that can actually answer. This removes the most common "it does not
@@ -570,6 +604,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
             }
+            if (provider == "gemini") migrateBlockedGeminiModel()
             modelsVersion++
             val msg = "CONNECTED:${fetched.size}"
             if (provider == "gemini") statusGemini = msg else statusOpenRouter = msg

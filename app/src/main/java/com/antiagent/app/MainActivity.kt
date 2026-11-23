@@ -44,12 +44,18 @@ class MainActivity : ComponentActivity() {
         // never written into the APK, the repo or any log.
         val g = intent.getStringExtra("aa_gemini")
         val o = intent.getStringExtra("aa_openrouter")
-        if (!g.isNullOrBlank() || !o.isNullOrBlank()) {
+        val th = intent.getStringExtra("aa_theme")
+        val md = intent.getStringExtra("aa_model")
+        if (!g.isNullOrBlank() || !o.isNullOrBlank() || !th.isNullOrBlank() || !md.isNullOrBlank()) {
             val p = com.antiagent.app.data.Prefs(this)
             if (!g.isNullOrBlank()) p.geminiKey = g.trim()
             if (!o.isNullOrBlank()) p.openRouterKey = o.trim()
+            if (!th.isNullOrBlank()) p.theme = th.trim()
+            if (!md.isNullOrBlank()) p.modelId = md.trim()
             intent.removeExtra("aa_gemini")
             intent.removeExtra("aa_openrouter")
+            intent.removeExtra("aa_theme")
+            intent.removeExtra("aa_model")
         }
 
         setContent {

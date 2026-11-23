@@ -43,10 +43,10 @@ data class LlmModel(
 
 object Models {
     val defaults = listOf(
-        LlmModel("gemini-2.5-flash", "Gemini 2.5 Flash", "gemini", 1_048_576, true, true),
-        LlmModel("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", "gemini", 1_048_576, true, true),
-        LlmModel("gemini-2.0-flash", "Gemini 2.0 Flash", "gemini", 1_048_576, true, true),
-        LlmModel("gemini-2.5-pro", "Gemini 2.5 Pro", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-3.5-flash", "Gemini 3.5 Flash", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-3.5-flash-lite", "Gemini 3.5 Flash-Lite", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-flash-lite-latest", "Gemini Flash-Lite (latest)", "gemini", 1_048_576, true, true),
+        LlmModel("gemini-2.5-pro", "Gemini 2.5 Pro (older keys)", "gemini", 1_048_576, true, true),
         LlmModel("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 (free)", "openrouter"),
         LlmModel("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B (free)", "openrouter"),
         LlmModel("google/gemma-3-27b-it:free", "Gemma 3 27B (free)", "openrouter", vision = true),
@@ -102,12 +102,12 @@ object Projects {
     const val ALL = "all"
 
     val defaults = listOf(
-        Project("chat", "Chat", "gemini-2.5-flash", "general", false, 0),
-        Project("coding", "Coding", "gemini-2.5-pro", "coder", false, 1),
-        Project("writing", "Writing", "gemini-2.5-flash", "writer", false, 2),
-        Project("study", "Study", "gemini-2.5-flash", "teacher", false, 3),
-        Project("research", "Research", "gemini-2.5-flash", "general", true, 4),
-        Project("translate", "Translate", "gemini-2.5-flash", "translator", false, 5)
+        Project("chat", "Chat", "gemini-3.5-flash", "general", false, 0),
+        Project("coding", "Coding", "gemini-3.5-flash", "coder", false, 1),
+        Project("writing", "Writing", "gemini-3.5-flash", "writer", false, 2),
+        Project("study", "Study", "gemini-3.5-flash", "teacher", false, 3),
+        Project("research", "Research", "gemini-3.5-flash", "general", true, 4),
+        Project("translate", "Translate", "gemini-3.5-flash", "translator", false, 5)
     )
 }
 
